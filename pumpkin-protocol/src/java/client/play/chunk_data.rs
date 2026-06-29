@@ -28,7 +28,7 @@ pub struct CChunkData<'a> {
     live_block_entities: &'a [ChunkBlockEntityData],
 }
 
-pub fn write_chunk_light_data(
+pub(super) fn write_chunk_light_data(
     chunk: &ChunkData,
     mut write: impl Write,
 ) -> Result<(), WritingError> {
