@@ -467,16 +467,18 @@ impl HostChestBlockEntity for PluginHostState {
 
     async fn viewer_count(&mut self, res: Resource<ChestBlockEntity>) -> wasmtime::Result<u32> {
         let entity = block_entity_from_resource(self, &Resource::new_own(res.rep()))?;
-        if let Some(chest) = entity.as_any().downcast_ref::<InternalChestBlockEntity>() {
-            Ok(chest.get_viewer_count() as u32)
-        } else if let Some(chest) = entity
+        entity
             .as_any()
-            .downcast_ref::<InternalTrappedChestBlockEntity>()
-        {
-            Ok(chest.get_viewer_count() as u32)
-        } else {
-            Err(wasmtime::Error::msg("Not a chest block entity"))
-        }
+            .downcast_ref::<InternalChestBlockEntity>()
+            .map(InternalChestBlockEntity::get_viewer_count)
+            .or_else(|| {
+                entity
+                    .as_any()
+                    .downcast_ref::<InternalTrappedChestBlockEntity>()
+                    .map(InternalTrappedChestBlockEntity::get_viewer_count)
+            })
+            .map(|count| count as u32)
+            .ok_or_else(|| wasmtime::Error::msg("Not a chest block entity"))
     }
 
     async fn size(&mut self, res: Resource<ChestBlockEntity>) -> wasmtime::Result<u32> {

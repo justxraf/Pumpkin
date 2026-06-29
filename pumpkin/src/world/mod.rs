@@ -5766,6 +5766,41 @@ impl World {
         Self::broadcast_java_grouped(je_packet, recipients_by_version);
     }
 
+    async fn broadcast_chunk_resend(&self, chunk_pos: Vector2<i32>, chunk: Arc<ChunkData>) {
+        let players = self.players.load();
+        let block_entities = self.chunk_block_entity_data(chunk_pos);
+        let java_recipients: Vec<_> = players
+            .iter()
+            .filter_map(|player| {
+                let center = player.get_entity().chunk_pos.load();
+                let view_distance = get_view_distance(player).get() as i32;
+                if !is_within_view_distance(chunk_pos, center, view_distance) {
+                    return None;
+                }
+                match player.client.as_ref() {
+                    ClientPlatform::Java(java_client) => Some(java_client),
+                    ClientPlatform::Bedrock(_) => None,
+                }
+            })
+            .collect();
+
+        for java_client in java_recipients {
+            match JavaClient::serialize_packet_for_version(
+                &CChunkData::with_block_entities(&chunk, &block_entities),
+                java_client.version.load(),
+            ) {
+                Ok(packet_data) => {
+                    java_client
+                        .send_serialized_chunk_batch(std::slice::from_ref(&packet_data))
+                        .await;
+                }
+                Err(error) => {
+                    error!("Failed to serialize chunk resend for {chunk_pos:?}: {error}");
+                }
+            }
+        }
+    }
+
     /// Broadcasts a packet to chunk watchers, excluding specific players.
     pub fn broadcast_to_chunk_except<P: ClientPacket>(
         &self,

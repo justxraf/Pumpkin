@@ -140,21 +140,21 @@ enum OutgoingPacketData {
 }
 
 impl OutgoingPacket {
-    fn normal(data: Bytes) -> Self {
+    const fn normal(data: Bytes) -> Self {
         Self {
             data: OutgoingPacketData::Single(data),
             completion: None,
         }
     }
 
-    fn high_priority(data: Bytes, completion: oneshot::Sender<()>) -> Self {
+    const fn high_priority(data: Bytes, completion: oneshot::Sender<()>) -> Self {
         Self {
             data: OutgoingPacketData::Single(data),
             completion: Some(completion),
         }
     }
 
-    fn high_priority_batch(data: Box<[Bytes]>, completion: oneshot::Sender<()>) -> Self {
+    const fn high_priority_batch(data: Box<[Bytes]>, completion: oneshot::Sender<()>) -> Self {
         Self {
             data: OutgoingPacketData::Batch(data),
             completion: Some(completion),
