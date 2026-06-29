@@ -15,11 +15,10 @@ use crate::block::entities::mob_spawner::MobSpawnerBlockEntity as InternalMobSpa
 use crate::block::entities::sign::SignBlockEntity as InternalSignBlockEntity;
 use crate::block::entities::trapped_chest::TrappedChestBlockEntity as InternalTrappedChestBlockEntity;
 use crate::plugin::loader::wasm::wasm_host::wit::v0_1::pumpkin::plugin::world::{
-    BlockChange as WitBlockChange, BlockDirection as WitBlockDirection, BlockEntity,
-    BlockEntityType, BlockFlags as WitBlockFlags, BlockPos as WitBlockPos,
-    BlockState as WitBlockState, BoundingBox as WitBoundingBox, Chunk as WitChunk,
-    NoteblockInstrument as WitNoteblockInstrument, PistonBehavior as WitPistonBehavior,
-    WorldBorder as WitWorldBorder,
+    BlockDirection as WitBlockDirection, BlockEntity, BlockEntityType, BlockFlags as WitBlockFlags,
+    BlockPos as WitBlockPos, BlockState as WitBlockState, BoundingBox as WitBoundingBox,
+    Chunk as WitChunk, NoteblockInstrument as WitNoteblockInstrument,
+    PistonBehavior as WitPistonBehavior, WorldBorder as WitWorldBorder,
 };
 use crate::plugin::loader::wasm::wasm_host::{
     state::{
@@ -350,31 +349,6 @@ impl pumpkin::plugin::world::HostWorld for PluginHostState {
             .clone()
             .set_block_state(&internal_pos, state, internal_flags)
             .await;
-        Ok(())
-    }
-
-    async fn set_block_states(
-        &mut self,
-        world: Resource<World>,
-        changes: Vec<WitBlockChange>,
-        update_flags: WitBlockFlags,
-    ) -> wasmtime::Result<()> {
-        let world_provider = self.get_world_res(&world)?.provider.clone();
-        let internal_flags = to_internal_block_flags(update_flags);
-        let internal_changes = changes
-            .into_iter()
-            .map(|change| {
-                (
-                    BlockPos::new(change.pos.x, change.pos.y, change.pos.z),
-                    change.state,
-                )
-            })
-            .collect();
-
-        world_provider
-            .set_block_states(internal_changes, internal_flags)
-            .await;
-
         Ok(())
     }
 
